@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\CommentController;
 use App\Http\Controllers\SubscriptionController;
 
 
@@ -47,12 +48,11 @@ Route::middleware('auth:sanctum')->put('/update-subscription/{id}', [Subscriptio
 Route::middleware('auth:sanctum')->delete('/delete-subscription/{id}', [SubscriptionController::class, 'delete']);
 /////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////Commentsالكومنتات/(name)|(job_title)|(rate)|(comment)//////////////////////////////////
-
-Route::get('/get-comments', [RestaurantController::class, 'allcomments']);       // عرض كل الكومنتات
-Route::get('/get-comment/{comment}', [RestaurantController::class, 'showcomment']); // عرض كومنت واحد
-Route::post('/create-comment', [RestaurantController::class, 'storecomment']);      // إضافة كومنت جديد
-Route::put('/update-comment/{comment}', [RestaurantController::class, 'updatecomment']); // تحديث كومنت
-Route::delete('/delete-comment/{comment}', [RestaurantController::class, 'deletecomment']); // حذف كومنت
+Route::get('/get-comments', [CommentController::class, 'allcomments']);       // عرض كل الكومنتات
+Route::get('/get-comment/{comment}', [CommentController::class, 'showcomment']); // عرض كومنت واحد
+Route::post('/create-comment', [CommentController::class, 'storecomment']);      // إضافة كومنت جديد
+Route::put('/update-comment/{comment}', [CommentController::class, 'updatecomment']); // تحديث كومنت
+Route::delete('/delete-comment/{comment}', [CommentController::class, 'deletecomment']); // حذف كومنت
 ////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////RestaurantImages صور المطعم//////////////////////////////////////////////
 Route::middleware('auth:sanctum')->get('/my-restaurants', [RestaurantController::class, 'myRestaurants']);///سيليكت بوكس لاختيار المطعم
