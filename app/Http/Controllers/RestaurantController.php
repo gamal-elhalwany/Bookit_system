@@ -92,15 +92,7 @@ class RestaurantController extends Controller
         return response()->json(['message' => 'Restaurant deleted successfully']);
     }
 
-    // حذف كومنت
-    public function deletecomment(Comment $comment)
-    {
-        $comment->delete();
 
-        return response()->json([
-            'message' => 'Comment deleted successfully'
-        ]);
-    }
 /////اضافة صوره للمطعم
     public function storerestimage(Request $request)
     {

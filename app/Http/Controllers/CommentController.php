@@ -54,4 +54,13 @@ class CommentController extends Controller
             'data' => $comment
         ]);
     }
+    // حذف كومنت
+    public function deletecomment(Comment $comment)
+    {
+        $comment->delete();
+
+        return response()->json([
+            'message' => 'Comment deleted successfully'
+        ]);
+    }
 }

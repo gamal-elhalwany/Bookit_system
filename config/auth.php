@@ -42,10 +42,10 @@ return [
         ],
 
         'api' => [
-            'driver' => 'sanctum',
+            'driver' => 'token',   // أو sanctum لو شغال بـ Laravel Sanctum
             'provider' => 'users',
+            'hash' => false,
         ],
-
     ],
 
     /*
