@@ -7,19 +7,30 @@ use Illuminate\Http\Request;
 
 class CommentController extends Controller
 {
-    // عرض كل الكومنتات
+    /**
+     * @return \Illuminate\Http\JsonResponse
+     * Get all comments.
+     */
     public function allcomments()
     {
         return response()->json(Comment::all());
     }
 
-    // عرض كومنت واحد
+    /**
+     * @param Comment $comment
+     * @return \Illuminate\Http\JsonResponse
+     * Show a single comment.
+     */
     public function showcomment(Comment $comment)
     {
         return response()->json($comment);
     }
 
-    // إضافة كومنت جديد
+    /**
+     * Add a new Comment.
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function storecomment(Request $request)
     {
         $validated = $request->validate([
@@ -37,7 +48,12 @@ class CommentController extends Controller
         ], 201);
     }
 
-    // تحديث كومنت
+    /**
+     * @param Request $request
+     * @param Comment $comment
+     * @return \Illuminate\Http\JsonResponse
+     * Update a single comment.
+     */
     public function updatecomment(Request $request, Comment $comment)
     {
         $validated = $request->validate([
@@ -54,7 +70,12 @@ class CommentController extends Controller
             'data' => $comment
         ]);
     }
-    // حذف كومنت
+
+    /**
+     * @param Comment $comment
+     * @return \Illuminate\Http\JsonResponse
+     * delete a single comment.
+     */
     public function deletecomment(Comment $comment)
     {
         $comment->delete();

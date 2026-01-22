@@ -11,26 +11,43 @@ use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
 class AuthController extends Controller
 {
+    /**
+     * Login the user
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function login(Request $request)
     {
-        $credentials = $request->only('email', 'password');
+        $user = User::where('email', $request->email)->first();
 
-        if (Auth::attempt($credentials)) {
-            $user = Auth::user();
-            $token = $user->createToken('auth_token')->plainTextToken;
-
+        if (!$user) {
             return response()->json([
-                'status' => 'success',
-                'user' => $user,
-                'token' => $token,
-            ]);
+                'status' => 'error',
+                'message' => 'Email not found or wrong email', // الخطأ هنا محدد للإيميل
+            ], 404);
         }
 
+        if (!Hash::check($request->password, $user->password)) {
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Incorrect password',
+            ], 401);
+        }
+
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
-            'status' => 'error',
-            'message' => 'Invalid credentials',
-        ], 401);
+            'status' => 'success',
+            'user' => $user,
+            'token' => $token,
+        ]);
     }
+
+    /**
+     * Register a new user
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function register(Request $request)
     {
         // التحقق من البيانات

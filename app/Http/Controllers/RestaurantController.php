@@ -7,6 +7,8 @@ use App\Models\RestaurantImage;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class RestaurantController extends Controller
 {
@@ -24,19 +26,29 @@ class RestaurantController extends Controller
     public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'address' => 'required|string|max:255',
-            'phone' => 'required|string|max:20',
+            'name' => 'required|string|max:255|unique:restaurants,name',
+            'address' => 'required|string|max:255|unique:restaurants,address',
+            'phone' => 'required|string',
             'email' => 'required|email|max:255',
-            'image' => 'required|string|max:255',
-            'opening_time' => 'required|date_format:H:i',
-            'closing_time' => 'required|date_format:H:i|after:opening_time',
+            'image' => 'required|image|mimes:jpg,png,jpeg,webp',
+            'opening_time' => 'required',
+            'closing_time' => 'required|after:opening_time',
             'rate' => 'numeric|min:0|max:9.99',
             'subscription_id' => 'nullable|exists:subscriptions,id',
             'business_type' => 'required|in:restaurant,cafe',
             'subscription_end_date' => 'nullable|date|after_or_equal:today',
         ]);
 
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+
+            $file = $request->file('image');
+
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+            $validated['image'] = $file->storeAs(
+                'restaurants', $filename, 'public'
+            );
+        }
 
         $validated['user_id'] = Auth::guard('api')->id();
         $restaurant = Restaurant::create($validated);
@@ -61,25 +73,45 @@ class RestaurantController extends Controller
     public function update(Request $request, Restaurant $restaurant)
     {
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'user_id' => 'sometimes|required|exists:users,id',
-            'address' => 'sometimes|required|string|max:255',
-            'phone' => 'sometimes|required|string|max:20',
-            'email' => 'sometimes|required|email|max:255',
-            'image' => 'sometimes|required|string|max:255',
-            'opening_time' => 'sometimes|required|date_format:H:i',
-            'closing_time' => 'sometimes|required|date_format:H:i|after:opening_time',
+            'name' => 'sometimes|string|max:255',
+            'user_id' => 'sometimes|exists:users,id',
+            'address' => 'sometimes|string|max:255',
+            'phone' => 'sometimes|string|max:20',
+            'email' => 'sometimes|email|max:255',
+            'image' => 'sometimes|string|max:255',
+            'opening_time' => 'sometimes|date_format:H:i',
+
+            'closing_time' => [
+                'sometimes',
+                'date_format:H:i',
+                'after:' . ($request->opening_time ?? $restaurant->opening_time)
+            ],
+
             'rate' => 'sometimes|numeric|min:0|max:9.99',
-            'subscription_id' => 'nullable|exists:subscriptions,id',
-            'business_type' => 'sometimes|required|in:restaurant,cafe',
-            'subscription_end_date' => 'nullable|date|after_or_equal:today',
+            'subscription_id' => 'sometimes|nullable|exists:subscriptions,id',
+            'business_type' => 'sometimes|in:restaurant,cafe',
+            'subscription_end_date' => 'sometimes|nullable|date|after_or_equal:today',
         ]);
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+            if ($restaurant->image) {
+                Storage::disk('public')->delete($restaurant->image);
+            }
+
+            $file = $request->file('image');
+            $filename = $restaurant->name . rand(1, 9999) . '.' . $file->getClientOriginalExtension();
+            $path = $file->storeAs('categories', $filename, 'public');
+
+            $validated['image'] = $path;
+        } else {
+            $path = $restaurant->image;
+        }
 
         $restaurant->update($validated);
 
         return response()->json([
             'message' => 'Restaurant updated successfully',
-            'data' => $restaurant
+            'data' => $restaurant->fresh(),
         ]);
     }
 

@@ -25,6 +25,14 @@ class User extends Authenticatable
     ];
 
     /**
+     * A restaurant belongs to one user
+     */
+    public function restaurant()
+    {
+        return $this->hasMany(Restaurant::class);
+    }
+
+    /**
      * The attributes that should be hidden for serialization.
      *
      * @var list<string>

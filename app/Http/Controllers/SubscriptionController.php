@@ -50,10 +50,10 @@ class SubscriptionController extends Controller
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
-            'name'          => 'sometimes|required|string|max:255',
+            'name'          => 'sometimes|string|max:255',
             'description'   => 'nullable|string',
-            'price'         => 'sometimes|required|numeric|min:0',
-            'duration_days' => 'sometimes|required|integer|min:1',
+            'price'         => 'sometimes|numeric|min:0',
+            'duration_days' => 'sometimes|integer|min:1',
             'is_active'     => 'boolean',
         ]);
 
