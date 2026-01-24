@@ -27,11 +27,9 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::delete('/delete-restaurant/{id}', [RestaurantController::class, 'delete'])->name('delete-restaurant');
 
     // --- Restaurant Images ---
-    Route::get('/my-restaurants', [RestaurantController::class, 'myRestaurants']);
-    Route::post('/create-image', [RestaurantController::class, 'storerestimage']);
-    Route::get('/restaurant-images/{restaurant_id}', [RestaurantController::class, 'getrestimages']);
-    Route::post('/update-image/{id}', [RestaurantController::class, 'updaterestimage']);
-    Route::delete('/delete-image/{id}', [RestaurantController::class, 'deleterestimage']);
+    Route::post('/add-restaurant-image', [RestaurantController::class, 'storerestimage']);
+    Route::get('get-restaurant-images/{id}', [RestaurantController::class, 'getrestimages']);
+    Route::delete('/delete-restaurant-image/{id}', [RestaurantController::class, 'deleterestimage']);
 
     // --- Subscriptions ---
     Route::get('/get-subscriptions', [SubscriptionController::class, 'index']);

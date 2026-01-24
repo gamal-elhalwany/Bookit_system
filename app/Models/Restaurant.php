@@ -53,4 +53,11 @@ class Restaurant extends Model
         return $this->hasMany(Product::class);
     }
 
+    /**
+     * A restaurant has many images
+     */
+    public function images()
+    {
+        return $this->hasMany(RestaurantImage::class);
+    }
 }

@@ -1,19 +1,21 @@
 <?php
 
 namespace App\Http\Controllers;
-use App\Models\Restaurant;
-use App\Models\Comment;
-use App\Models\RestaurantImage;
 
+use App\Models\Comment;
+use App\Models\Restaurant;
+use Illuminate\Support\Str;
 use Illuminate\Http\Request;
+use App\Models\RestaurantImage;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
-use Illuminate\Support\Str;
 
 class RestaurantController extends Controller
 {
 
-    // عرض كل المطاعم
+    /**
+     * Get all restaurants.
+     */
     public function index()
     {
         $restaurants = Restaurant::with('subscription')->get();
@@ -21,8 +23,9 @@ class RestaurantController extends Controller
         return response()->json($restaurants);
     }
 
-
-    // إضافة مطعم جديد
+    /**
+     * Create a new restaurant.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -31,10 +34,10 @@ class RestaurantController extends Controller
             'phone' => 'required|string',
             'email' => 'required|email|max:255',
             'image' => 'required|image|mimes:jpg,png,jpeg,webp',
-            'opening_time' => 'required',
+            'opening_time' => 'nullable',
             'closing_time' => 'required|after:opening_time',
             'rate' => 'numeric|min:0|max:9.99',
-            'subscription_id' => 'nullable|exists:subscriptions,id',
+            'subscription_id' => 'required|exists:subscriptions,id',
             'business_type' => 'required|in:restaurant,cafe',
             'subscription_end_date' => 'nullable|date|after_or_equal:today',
         ]);
@@ -46,7 +49,9 @@ class RestaurantController extends Controller
             $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
 
             $validated['image'] = $file->storeAs(
-                'restaurants', $filename, 'public'
+                'restaurants',
+                $filename,
+                'public'
             );
         }
 
@@ -59,17 +64,18 @@ class RestaurantController extends Controller
         ], 201);
     }
 
-
-
-
-    // عرض مطعم واحد
+    /**
+     * Show a specific restaurant.
+     */
     public function show($id)
     {
         $restaurant = Restaurant::findOrFail($id);
         return response()->json($restaurant);
     }
 
-    // تعديل بيانات مطعم
+    /**
+     * Update an existing restaurant.
+     */
     public function update(Request $request, Restaurant $restaurant)
     {
         $validated = $request->validate([
@@ -115,7 +121,9 @@ class RestaurantController extends Controller
         ]);
     }
 
-    // حذف مطعم
+    /**
+     * Delete a restaurant.
+     */
     public function delete($id)
     {
         $restaurant = Restaurant::findOrFail($id);
@@ -125,17 +133,32 @@ class RestaurantController extends Controller
     }
 
 
-/////اضافة صوره للمطعم
+    /**
+     * Add an image to a restaurant.
+     */
     public function storerestimage(Request $request)
     {
-        $request->validate([
+        $validated = $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'image' => 'required|string',
+            'image' => 'required|image|mimes:jpg,png,jpeg,webp',
         ]);
+
+        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+
+            $file = $request->file('image');
+
+            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+            $validated['image'] = $file->storeAs(
+                'restaurants',
+                $filename,
+                'public'
+            );
+        }
 
         $image = RestaurantImage::create([
             'restaurant_id' => $request->restaurant_id,
-            'image' => $request->image,
+            'image' => $validated['image'],
         ]);
 
         return response()->json([
@@ -145,61 +168,32 @@ class RestaurantController extends Controller
     }
 
 
-//////////عرض صور المطعم
-    public function getrestimages($restaurant_id)
+    /**
+     * Get all restaurants images.
+     */
+    public function getrestimages($id)
     {
-        $images = RestaurantImage::where('restaurant_id', $restaurant_id)->get();
-        return response()->json($images);
-    }
-
-    public function updaterestimage(Request $request, $id)
-    {
-        $request->validate([
-            'image' => 'required|string',
-        ]);
-
-        $image = RestaurantImage::findOrFail($id);
-
-        $image->update([
-            'image' => $request->image,
-        ]);
-
+        $images = RestaurantImage::where('restaurant_id', $id)->get();
         return response()->json([
-            'message' => 'Image updated successfully',
-            'data' => $image
+            'Images' => $images
         ]);
     }
-/////حذف صوره مطعم
+
+    /**
+     * Delete a restaurant image.
+     */
     public function deleterestimage($id)
     {
         $image = RestaurantImage::findOrFail($id);
 
-        if ($image->image && \Storage::disk('public')->exists($image->image)) {
-            \Storage::disk('public')->delete($image->image);
+        if ($image->image && Storage::disk('public')->exists($image->image)) {
+            Storage::disk('public')->delete($image->image);
         }
 
         $image->delete();
 
         return response()->json([
-            'message' => 'Image deleted successfully'
+            'message' => 'Image deleted successfully.'
         ]);
     }
-/////كل المطاعم الخاصه بالشخص الي مسجل دخول
-public function myRestaurants()
-{
-    $userId = Auth::id();
-
-    $restaurants = Restaurant::where('user_id', $userId)->get();
-
-    return response()->json([
-        'message' => 'My restaurants retrieved successfully',
-        'data' => $restaurants
-    ], 200);
-}
-
-
-
-
-
-
 }

@@ -11,7 +11,9 @@ class RestaurantImage extends Model
         'image',
     ];
 
-    // علاقة الصورة بالمطعم
+    /**
+     * A RestaurantImage belongsTo Restaurant.
+     */
     public function restaurant()
     {
         return $this->belongsTo(Restaurant::class);
