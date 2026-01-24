@@ -7,7 +7,9 @@ use Illuminate\Http\Request;
 
 class SubscriptionController extends Controller
 {
-    // عرض كل الباقات
+    /**
+     * Get all subscriptions.
+     */
     public function index()
     {
         $subscriptions = Subscription::all();
@@ -17,7 +19,9 @@ class SubscriptionController extends Controller
         ], 200);
     }
 
-    // عرض باقة واحدة
+    /**
+     * Get a specific subscription by ID.
+     */
     public function show($id)
     {
         $subscription = Subscription::findOrFail($id);
@@ -27,7 +31,9 @@ class SubscriptionController extends Controller
         ], 200);
     }
 
-    // إنشاء باقة جديدة
+    /**
+     * Create a new subscription.
+     */
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -46,7 +52,9 @@ class SubscriptionController extends Controller
         ], 201);
     }
 
-    // تعديل باقة
+    /**
+     * Update an existing subscription.
+     */
     public function update(Request $request, $id)
     {
         $validated = $request->validate([
@@ -66,7 +74,9 @@ class SubscriptionController extends Controller
         ], 200);
     }
 
-    // حذف باقة
+    /**
+     * Delete a subscription.
+     */
     public function delete($id)
     {
         $subscription = Subscription::findOrFail($id);
