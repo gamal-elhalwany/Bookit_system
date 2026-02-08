@@ -10,17 +10,29 @@ class Subscription extends Model
 {
     use HasFactory;
 
-    protected $fillable = [
-        'name',
-        'description',
-        'price',
-        'duration_days',
-        'is_active',
-    ];
+    protected $guarded = [];
 
-    // علاقة مع المطاعم
-    public function restaurants()
+    /**
+     * Get the restaurant for the subscription.
+     */
+    public function restaurant()
     {
-        return $this->hasMany(Restaurant::class);
+        return $this->belongsTo(Restaurant::class);
+    }
+
+    /**
+     * The packages that belong to the subscription.
+     */
+    public function package()
+    {
+        return $this->belongsTo(Package::class);
+    }
+
+    /**
+     * Get the payments for the subscription.
+     */
+    public function payments()
+    {
+        return $this->hasMany(SubscriptionsPayments::class, 'subscription_id');
     }
 }

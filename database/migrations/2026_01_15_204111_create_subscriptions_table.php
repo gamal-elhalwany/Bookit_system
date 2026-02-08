@@ -12,11 +12,13 @@ return new class extends Migration {
     {
         Schema::create('subscriptions', function (Blueprint $table) {
             $table->id();
-            $table->string('name'); // اسم الباقة
-            $table->text('description')->nullable(); // وصف الباقة
-            $table->decimal('price', 8, 2); // سعر الباقة
-            $table->integer('duration_days'); // مدة الباقة بالأيام
-            $table->boolean('is_active')->default(true); // حالة الباقة (مفعلة/غير مفعلة)
+            $table->unsignedBigInteger('restaurant_id');
+            $table->unsignedBigInteger('package_id');
+            $table->foreign('restaurant_id')->references('id')->on('restaurants')->onDelete('cascade');
+            $table->foreign('package_id')->references('id')->on('packages')->onDelete('cascade');
+            $table->date('starts_at');
+            $table->date('ends_at');
+            $table->enum('status', ['active', 'pending', 'expired', 'cancelled'])->default('active');
             $table->timestamps();
         });
     }

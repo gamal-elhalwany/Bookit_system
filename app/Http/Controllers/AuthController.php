@@ -1,6 +1,7 @@
 <?php
 
 namespace App\Http\Controllers;
+
 use Illuminate\Support\Facades\DB;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -9,6 +10,8 @@ use App\Models\User;
 use App\Mail\VerifyEmail;
 use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
+use Illuminate\Validation\Rules\Password;
+
 class AuthController extends Controller
 {
     /**
@@ -18,20 +21,29 @@ class AuthController extends Controller
      */
     public function login(Request $request)
     {
+        $request->validate([
+            'email' => 'required|email|exists:users,email',
+            'password' => 'required',
+        ]);
+
         $user = User::where('email', $request->email)->first();
 
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Email not found or wrong email', // الخطأ هنا محدد للإيميل
+                'message' => 'Email not found or wrong email',
             ], 404);
         }
 
-        if (!Hash::check($request->password, $user->password)) {
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'status' => 'error',
                 'message' => 'Incorrect password',
             ], 401);
+        }
+
+        if (!$user->email_verified_at) {
+            return response()->json(['message' => 'Please verify your email first'], 403);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
@@ -50,45 +62,44 @@ class AuthController extends Controller
      */
     public function register(Request $request)
     {
-        // التحقق من البيانات
         $request->validate([
             'name' => 'required|string|max:255',
             'email' => 'required|string|email|unique:users',
             'password' => 'required|string|min:6',
         ]);
 
-        // إنشاء المستخدم
         $user = User::create([
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
         ]);
 
-        // توليد كود تحقق عشوائي
         $verificationCode = rand(100000, 999999);
 
-        // حفظ الكود في جدول users
         $user->verification_code = $verificationCode;
         $user->save();
 
-        // إرسال الكود بالإيميل
         Mail::to($user->email)->send(new VerifyEmail($user, $verificationCode));
-        // الرد بدون توكن (لأن الحساب لسه مش متحقق)
+        
         return response()->json([
             'status' => 'success',
             'message' => 'Account created. Please check your email for the verification code.',
             'user' => $user,
         ], 201);
     }
+
+    /**
+     * Verify user's email
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
     public function verify(Request $request)
     {
-        // التحقق من البيانات اللي جاية من الفرونت
         $request->validate([
             'email' => 'required|email',
             'code' => 'required|string'
         ]);
 
-        // البحث عن المستخدم بالكود والإيميل
         $user = User::where('email', $request->email)
             ->where('verification_code', $request->code)
             ->first();
@@ -96,16 +107,14 @@ class AuthController extends Controller
         if (!$user) {
             return response()->json([
                 'status' => 'error',
-                'message' => 'Invalid verification code'
+                'message' => 'Invalid verification credentials'
             ], 400);
         }
 
-        // تحديث حالة التحقق
         $user->email_verified_at = now();
         $user->verification_code = null; // نمسح الكود بعد الاستخدام
         $user->save();
 
-        // إنشاء التوكن بعد التحقق
         $token = $user->createToken('authToken')->plainTextToken;
 
         return response()->json([
@@ -116,12 +125,19 @@ class AuthController extends Controller
         ], 200);
     }
 
-    public function sendOtp(Request $request)
+    /**
+     * Send OTP to email for password reset
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function forgetPassword(Request $request)
     {
         $request->validate(['email' => 'required|email']);
 
-        $otp = rand(100000, 999999); // كود 6 أرقام
-        $expiresAt = now()->addMinutes(10); // صالح لمدة 10 دقائق
+        $otp = rand(100000, 999999);
+        $expiresAt = now()->addMinutes(10);
+
+        DB::table('password_otps')->where('email', $request->email)->delete();
 
         DB::table('password_otps')->insert([
             'email' => $request->email,
@@ -131,12 +147,17 @@ class AuthController extends Controller
             'updated_at' => now(),
         ]);
 
-         Mail::to($request->email)->send(new OtpMail($otp));
+        Mail::to($request->email)->send(new OtpMail($otp));
 
         return response()->json(['message' => 'OTP sent to your email']);
     }
 
-    public function resetWithOtp(Request $request)
+    /**
+     * Reset password using OTP
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function resetPasswordWithOtp(Request $request)
     {
 
         DB::table('password_otps')
@@ -145,8 +166,14 @@ class AuthController extends Controller
 
         $request->validate([
             'email' => 'required|email',
-            'otp' => 'required',
-            'password' => 'required|min:8|confirmed',
+            'otp' => 'required|digits:6',
+            'password' => [
+                'required',
+                'confirmed',
+                Password::min(6)
+                    // ->letters()
+                    // ->numbers(),
+            ],
         ]);
 
         $record = DB::table('password_otps')
@@ -162,12 +189,9 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->firstOrFail();
         $user->password = bcrypt($request->password);
         $user->save();
-
-        // امسح الـ OTP بعد الاستخدام
+        
         DB::table('password_otps')->where('id', $record->id)->delete();
 
         return response()->json(['message' => 'Password reset successfully']);
     }
-
-
 }
