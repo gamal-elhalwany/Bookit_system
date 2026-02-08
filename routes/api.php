@@ -26,13 +26,13 @@ Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
 
 Route::middleware(['auth:sanctum', 'verified'])->group(function () {
 
+    // --- Get All Restaurants (for the authenticated user) ---
     Route::get('/get-restaurants', [RestaurantController::class, 'index'])->name('get-Allrestaurants');
+
+    // everything inside this group requires passing through the subscription flow check.
+    // Here goes all owner dashboard routes that require an active subscription.
     Route::middleware(['subscription.flow'])->group(function () {
-        // Here goes all owner dashboard routes that require an active subscription.
         Route::get('stats', [SubscriptionController::class, 'stats']);
-
-         // --- Get All Restaurants (for the authenticated user) ---
-
     });
 
     // --- Restaurants ---

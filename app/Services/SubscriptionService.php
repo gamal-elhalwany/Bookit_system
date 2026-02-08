@@ -70,7 +70,7 @@ class SubscriptionService
     /**
      * Get Paymob payment link for the subscription.
      */
-    public function getPaymobLink($subscription, $amount, $paymentMethod, $walletNumber = null)
+    public function getPaymobLink($subscription, $amount, $paymentMethod, $walletNumber = null)x
     {
         // المرحلة 1: الحصول على Authentication Token
         $auth = Http::post('https://accept.paymob.com/api/auth/tokens', [
