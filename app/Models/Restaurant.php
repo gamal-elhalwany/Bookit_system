@@ -6,20 +6,7 @@ use Illuminate\Database\Eloquent\Model;
 
 class Restaurant extends Model
 {
-    protected $fillable = [
-        'name',
-        'user_id',
-        'address',
-        'phone',
-        'email',
-        'image',
-        'opening_time',
-        'closing_time',
-        'rate',
-        'subscription_id',
-        'business_type',
-        'subscription_end_date'
-    ];
+    protected $guarded = [];
 
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
@@ -32,9 +19,17 @@ class Restaurant extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function subscription()
+    public function subscriptions()
     {
-        return $this->belongsTo(Subscription::class);
+        return $this->hasMany(Subscription::class);
+    }
+
+    /**
+     * The restaurant current subscription
+     */
+    public function currentSubscription()
+    {
+        return $this->hasOne(Subscription::class)->where('status', 'active')->latest();
     }
 
     /**

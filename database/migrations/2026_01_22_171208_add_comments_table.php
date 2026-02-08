@@ -12,10 +12,9 @@ return new class extends Migration {
     {
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->text('comment');
             $table->string('job_title');
             $table->decimal('rate', 3, 1);
-            $table->text('comment');
             $table->timestamps();
         });
     }

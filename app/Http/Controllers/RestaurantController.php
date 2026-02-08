@@ -7,20 +7,22 @@ use App\Models\Restaurant;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\RestaurantImage;
+use App\Models\Restaurnt_user;
+use App\Models\Subscription;
+use App\Models\SubscriptionsPayments;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class RestaurantController extends Controller
 {
-
     /**
      * Get all restaurants.
      */
     public function index()
     {
-        $restaurants = Restaurant::with('subscription')->get();
-
-        return response()->json($restaurants);
+        $restaurants = Restaurant::with('subscriptions')->get();
+        return response()->json(["data" => $restaurants]);
     }
 
     /**
@@ -28,40 +30,53 @@ class RestaurantController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255|unique:restaurants,name',
-            'address' => 'required|string|max:255|unique:restaurants,address',
-            'phone' => 'required|string',
-            'email' => 'required|email|max:255',
-            'image' => 'required|image|mimes:jpg,png,jpeg,webp',
-            'opening_time' => 'nullable',
-            'closing_time' => 'required|after:opening_time',
-            'rate' => 'numeric|min:0|max:9.99',
-            'subscription_id' => 'required|exists:subscriptions,id',
-            'business_type' => 'required|in:restaurant,cafe',
-            'subscription_end_date' => 'nullable|date|after_or_equal:today',
-        ]);
+        DB::beginTransaction();
 
-        if ($request->hasFile('image') && $request->file('image')->isValid()) {
+        try {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255|unique:restaurants,name',
+                'address' => 'required|string|max:255|unique:restaurants,address',
+                'phone' => 'required|string',
+                'email' => 'required|email|max:255',
+                'image' => 'required|image|mimes:jpg,png,jpeg,webp',
+                'opening_time' => 'nullable',
+                'closing_time' => 'required|after:opening_time',
+                'rate' => 'numeric|min:0|max:9.99',
+                'business_type' => 'required|in:restaurant,cafe',
+                'booking_counts' => 'nullable',
+            ]);
 
-            $file = $request->file('image');
+            if ($request->hasFile('image') && $request->file('image')->isValid()) {
 
-            $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+                $file = $request->file('image');
 
-            $validated['image'] = $file->storeAs(
-                'restaurants',
-                $filename,
-                'public'
-            );
+                $filename = Str::uuid() . '.' . $file->getClientOriginalExtension();
+
+                $validated['image'] = $file->storeAs(
+                    'restaurants',
+                    $filename,
+                    'public'
+                );
+            }
+
+            $restaurant = Restaurant::create($validated);
+
+            $restaurant_user = Restaurnt_user::create([
+                'restaurant_id' => $restaurant->id,
+                'user_id' => $request->user()->id,
+            ]);
+
+            DB::commit();
+
+            return response()->json([
+                'message' => 'Restaurant created successfully',
+                'data' => $restaurant,
+                'restaurant_user' => $restaurant_user
+            ], 201);
+        } catch (\Exception $e) {
+            DB::rollBack();
+            return response()->json(['error' => $e->getMessage()], 500);
         }
-
-        $validated['user_id'] = Auth::guard('api')->id();
-        $restaurant = Restaurant::create($validated);
-
-        return response()->json([
-            'message' => 'Restaurant created successfully',
-            'data' => $restaurant
-        ], 201);
     }
 
     /**
@@ -131,7 +146,6 @@ class RestaurantController extends Controller
 
         return response()->json(['message' => 'Restaurant deleted successfully']);
     }
-
 
     /**
      * Add an image to a restaurant.

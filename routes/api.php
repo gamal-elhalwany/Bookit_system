@@ -2,11 +2,18 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
-use App\Http\Controllers\RestaurantController;
+use App\Http\Controllers\RolesController;
 use App\Http\Controllers\CommentController;
+use App\Http\Controllers\RestaurantController;
+use App\Http\Middleware\CheckSubscriptionFlow;
+use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Api\PackagesController;
 use App\Http\Controllers\SubscriptionController;
 use App\Http\Controllers\Api\CategoriesController;
-use App\Http\Controllers\Api\ProductController;
+use App\Http\Controllers\Payment\PaymentController;
+use App\Http\Controllers\Api\SubscriptionPaymentController;
+use App\Http\Controllers\Api\our_website\ProductsController;
+use App\Http\Controllers\Api\our_website\RestaurantsController;
 
 /**
  * Authentication Routes.
@@ -14,13 +21,21 @@ use App\Http\Controllers\Api\ProductController;
 Route::post('/login', [AuthController::class, 'login']);
 Route::post('/register', [AuthController::class, 'register']);
 Route::post('/verify', [AuthController::class, 'verify']);
-Route::post('/forgot-password', [AuthController::class, 'sendOtp']);
-Route::post('/reset-password', [AuthController::class, 'resetWithOtp']);
+Route::post('/forgot-password', [AuthController::class, 'forgetPassword']);
+Route::post('/reset-password', [AuthController::class, 'resetPasswordWithOtp']);
 
-Route::middleware(['auth:sanctum'])->group(function () {
+Route::middleware(['auth:sanctum', 'verified'])->group(function () {
+
+    Route::get('/get-restaurants', [RestaurantController::class, 'index'])->name('get-Allrestaurants');
+    Route::middleware(['subscription.flow'])->group(function () {
+        // Here goes all owner dashboard routes that require an active subscription.
+        Route::get('stats', [SubscriptionController::class, 'stats']);
+
+         // --- Get All Restaurants (for the authenticated user) ---
+
+    });
 
     // --- Restaurants ---
-    Route::get('/get-restaurants', [RestaurantController::class, 'index'])->name('get-Allrestaurants');
     Route::post('/create-restaurant', [RestaurantController::class, 'store'])->name('create-restaurant');
     Route::get('/get-restaurant/{id}', [RestaurantController::class, 'show'])->name('get-onerestaurant');
     Route::post('/update-restaurant/{restaurant}', [RestaurantController::class, 'update'])->name('update-restaurant');
@@ -31,11 +46,17 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('get-restaurant-images/{id}', [RestaurantController::class, 'getrestimages']);
     Route::delete('/delete-restaurant-image/{id}', [RestaurantController::class, 'deleterestimage']);
 
+    // --- Packages ---
+    Route::get('/get-packages', [PackagesController::class, 'index']);
+    Route::post('/store-package', [PackagesController::class, 'store']);
+    Route::get('/get-package/{package}', [PackagesController::class, 'show']);
+    Route::post('/update-package/{package}', [PackagesController::class, 'update']);
+    Route::delete('/delete-package/{package}', [PackagesController::class, 'destroy']);
+
     // --- Subscriptions ---
+    Route::post('/subscribe/checkout', [SubscriptionController::class, 'checkout']);
     Route::get('/get-subscriptions', [SubscriptionController::class, 'index']);
     Route::get('/get-subscription/{id}', [SubscriptionController::class, 'show']);
-    Route::post('/create-subscription', [SubscriptionController::class, 'store']);
-    Route::post('/update-subscription/{id}', [SubscriptionController::class, 'update']);
     Route::delete('/delete-subscription/{id}', [SubscriptionController::class, 'delete']);
 
     // --- Comments ---
@@ -57,13 +78,20 @@ Route::middleware(['auth:sanctum'])->group(function () {
     Route::get('product/show/{product}', [ProductController::class, 'show']);
     Route::post('/product/{product}', [ProductController::class, 'update']);
     Route::delete('product/delete/{product}', [ProductController::class, 'destroy']);
+
+    // --- Roles ---
+    // Route::resource('roles', RolesController::class);
 });
 
+// رابط الـ Webhook (ده اللي بتحطه في داشبورد Paymob)
+Route::any('/payments/callback', [SubscriptionPaymentController::class, 'handleWebhook']);
 
+/**
+ * Our Home Page Routes.
+ */
 
+/*============================== Get all products of all restaurants =============================*/
+Route::get('get-all-products', [ProductsController::class, 'index']);
 
-
-
-
-
-
+/*============================== Get all restaurants. =============================*/
+Route::get('get-all-restaurants', [RestaurantsController::class, 'index']);
