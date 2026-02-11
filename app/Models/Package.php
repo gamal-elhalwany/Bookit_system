@@ -18,6 +18,8 @@ class Package extends Model
 
 
     protected $casts = [
-        'features' => 'array',
+        'name' => 'json',
+        'description' => 'json',
+        'features' => 'json',
     ];
 }

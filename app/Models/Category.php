@@ -23,4 +23,9 @@ class Category extends Model
     {
         return $this->hasMany(Product::class);
     }
+
+    protected $casts = [
+        'name' => 'json',
+        'description' => 'json',
+    ];
 }

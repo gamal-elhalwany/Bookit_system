@@ -2,14 +2,14 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Support\Facades\DB;
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
-use Illuminate\Support\Facades\Hash;
 use App\Models\User;
-use App\Mail\VerifyEmail;
-use Illuminate\Support\Facades\Mail;
 use App\Mail\OtpMail;
+use App\Mail\VerifyEmail;
+use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Validation\Rules\Password;
 
 class AuthController extends Controller
@@ -63,9 +63,17 @@ class AuthController extends Controller
     public function register(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255',
-            'email' => 'required|string|email|unique:users',
-            'password' => 'required|string|min:6',
+            'name' => 'required|array',
+            'name.ar' => ['required','string','min:3','max:50', Rule::unique('users', 'name->ar')],
+            'name.en' => ['required','string','min:3','max:50', Rule::unique('users', 'name->en')],
+            'email' => 'required|string|email|unique:users,email',
+            'password' => 'required|string|min:6|confirmed',
+        ],
+        [
+            'name.ar.required' => 'حقل الاسم العربي مطلوب.',
+            'name.ar.min' => 'الاسم العربي يجب ألا يقل عن 3 حروف.',
+            'name.ar.unique' => 'هذا الاسم موجود بالفعل.',
+            'password.confirmed' => 'تأكيد كلمة المرور لا يطابق.',
         ]);
 
         $user = User::create([
@@ -193,5 +201,18 @@ class AuthController extends Controller
         DB::table('password_otps')->where('id', $record->id)->delete();
 
         return response()->json(['message' => 'Password reset successfully']);
+    }
+
+    /**
+     * Logout the user by deleting the current access token
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function logout(Request $request)
+    {
+        // حذف التوكن الحالي اللي اليوزر داخل بيه
+        $request->user()->tokens()->delete();
+
+        return response()->json(['message' => 'Logged out successfully']);
     }
 }

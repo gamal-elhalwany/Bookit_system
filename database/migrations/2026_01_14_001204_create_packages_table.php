@@ -13,8 +13,8 @@ return new class extends Migration
     {
         Schema::create('packages', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
-            $table->text('description')->nullable();
+            $table->json('name');
+            $table->json('description')->nullable();
             $table->decimal('price', 8, 2);
             $table->integer('duration_days');
             $table->integer('max_restaurants')->nullable();

@@ -12,8 +12,8 @@ return new class extends Migration {
     {
         Schema::create('comments', function (Blueprint $table) {
             $table->id();
-            $table->text('comment');
-            $table->string('job_title');
+            $table->json('comment');
+            $table->json('job_title');
             $table->decimal('rate', 3, 1);
             $table->timestamps();
         });

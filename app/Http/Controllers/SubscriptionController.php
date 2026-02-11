@@ -130,6 +130,6 @@ class SubscriptionController extends Controller
     {
         return response()->json([
             'message' => 'This Action Can not be Allowed. Subscriptions are managed automatically based on payment status and package duration.'
-        ], 200);
+        ], 403);
     }
 }

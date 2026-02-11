@@ -11,9 +11,10 @@ class CommentController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * Get all comments.
      */
-    public function allcomments()
+    public function index()
     {
-        return response()->json(Comment::all());
+        $comments = Comment::all();
+        return response()->json(['comments' => $comments]);
     }
 
     /**
@@ -21,9 +22,9 @@ class CommentController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * Show a single comment.
      */
-    public function showcomment(Comment $comment)
+    public function show(Comment $comment)
     {
-        return response()->json($comment);
+        return response()->json(['comment' => $comment]);
     }
 
     /**
@@ -31,13 +32,16 @@ class CommentController extends Controller
      * @param Request $request
      * @return \Illuminate\Http\JsonResponse
      */
-    public function storecomment(Request $request)
+    public function store(Request $request)
     {
         $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'job_title' => 'required|string|max:255',
+            'comment' => 'required|array',
+            'comment.ar' => 'string|max:255',
+            'comment.en' => 'string|max:255',
+            'job_title' => 'required|array',
+            'job_title.ar' => 'string|max:255',
+            'job_title.en' => 'string|max:255',
             'rate' => 'required|numeric|min:0|max:5',
-            'comment' => 'required|string',
         ]);
 
         $comment = Comment::create($validated);
@@ -54,13 +58,16 @@ class CommentController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * Update a single comment.
      */
-    public function updatecomment(Request $request, Comment $comment)
+    public function update(Request $request, Comment $comment)
     {
         $validated = $request->validate([
-            'name' => 'sometimes|required|string|max:255',
-            'job_title' => 'sometimes|required|string|max:255',
-            'rate' => 'sometimes|required|numeric|min:0|max:5',
-            'comment' => 'sometimes|required|string',
+            'comment' => 'required|array',
+            'comment.ar' => 'string|max:255',
+            'comment.en' => 'string|max:255',
+            'job_title' => 'required|array',
+            'job_title.ar' => 'string|max:255',
+            'job_title.en' => 'string|max:255',
+            'rate' => 'required|numeric|min:0|max:5',
         ]);
 
         $comment->update($validated);
@@ -76,7 +83,7 @@ class CommentController extends Controller
      * @return \Illuminate\Http\JsonResponse
      * delete a single comment.
      */
-    public function deletecomment(Comment $comment)
+    public function destroy(Comment $comment)
     {
         $comment->delete();
 

@@ -8,11 +8,12 @@ use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
 use Spatie\Permission\Traits\HasRoles;
+use Spatie\Translatable\HasTranslations;
 
 class User extends Authenticatable implements MustVerifyEmail
 {
     /** @use HasFactory<\Database\Factories\UserFactory> */
-    use HasFactory, HasApiTokens, Notifiable, HasRoles;
+    use HasFactory, HasApiTokens, Notifiable, HasTranslations;
 
     protected $guard_name = 'api';
 
@@ -22,6 +23,7 @@ class User extends Authenticatable implements MustVerifyEmail
      * @var list<string>
      */
     protected $guarded = [];
+    public $translatable = ['name'];
 
     /**
      * A restaurant belongs to one user
@@ -49,6 +51,7 @@ class User extends Authenticatable implements MustVerifyEmail
     protected function casts(): array
     {
         return [
+            'name' => 'json',
             'email_verified_at' => 'datetime',
             'password' => 'hashed',
         ];

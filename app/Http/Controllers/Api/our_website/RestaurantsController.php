@@ -13,10 +13,9 @@ class RestaurantsController extends Controller
      */
     public function index()
     {
-        $topRatedRestaurants = Restaurant::whereNotNull('rate')
+        $topRatedRestaurants = Restaurant::where('rate', '>', 0)
             ->orderBy('rate', 'desc')
             ->orderBy('created_at', 'DESC')
-            ->take(3)
             ->get();
 
         return response()->json([

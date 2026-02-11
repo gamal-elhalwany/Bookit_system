@@ -8,22 +8,27 @@ use Symfony\Component\HttpFoundation\Response;
 
 class CheckSubscriptionFlow
 {
-    /**
-     * Handle an incoming request.
-     *
-     * @param  \Closure(\Illuminate\Http\Request): (\Symfony\Component\HttpFoundation\Response)  $next
-     */
     public function handle(Request $request, Closure $next): Response
     {
-        $user = $request->user();
+        // 7|KMl50mNyZiyCvQRVliFvwMbEXyaGaelNbM5o9Qgee936d0f8
+        $user = auth()->user();
 
-        // 1. Admin Bypass
-        if ($user->hasRole('admin')) { 
-            return $next($request);
+        // 1. Admin Bypass (صلاحية كاملة للأدمن)
+        // if ($user->hasRole('admin')) { 
+        //     return $next($request);
+        // }
+        
+        // 2. دمج الكود الأول: التحقق من وجود الـ ID (Header أو Body)
+        // استخدمت $request->input() لأنها أشمل من $request->restaurant_id
+        $restaurantId = $request->header('X-Restaurant-Id') ?? $request->input('restaurant_id')
+            ?? $request->route('restaurant')  // لو الـ URL فيه {restaurant}
+            ?? $request->route('id');
+
+        // 2. التحقق من أن القيمة ليست كائن (Object)
+        // أحياناً لارافيل بيحول الـ ID لـ Model تلقائياً، إحنا محتاجين الـ ID بس
+        if (is_object($restaurantId)) {
+            $restaurantId = $restaurantId->id;
         }
-
-        // 2. Receive Restaurant ID
-        $restaurantId = $request->header('X-Restaurant-Id') ?? $request->restaurant_id;
 
         if (!$restaurantId) {
             return response()->json([
@@ -32,31 +37,33 @@ class CheckSubscriptionFlow
             ], 403);
         }
 
-        // 3. Check if the restaurant belongs to the user
+        // 3. دمج الكود الثاني: التحقق من الملكية + جلب البيانات في خطوة واحدة
+        // هنا: تأكدنا إنه يخص المستخدم وجبنا الموديل عشان نفحص الاشتراك
         $restaurant = $user->restaurants()->where('restaurants.id', $restaurantId)->first();
 
         if (!$restaurant) {
             return response()->json([
                 'step' => 'unauthorized',
-                'message' => 'ليس لديك صلاحية الوصول لهذا المطعم.'
+                'message' => 'ليس لديك صلاحية الوصول لهذا المطعم أو المطعم غير موجود.'
             ], 403);
         }
 
-        // 4. Check for active subscription
+        // 4. فحص الاشتراك (وظيفة الميدلوير الأساسية)
+        // لاحظ هنا استخدمنا العلاقة من الـ $restaurant اللي لسه جايبينه فوق
         $activeSubscription = $restaurant->subscriptions()
             ->where('status', 'active')
             ->where('ends_at', '>', now())
             ->exists();
 
-        if (!$activeSubscription) {
+        if (!$activeSubscription && $restaurant->subscriptions()->exists()) {
             return response()->json([
                 'step' => 'payment_required',
                 'restaurant_id' => $restaurant->id,
-                'message' => 'اشتراك المطعم منتهي أو غير فعال.'
-            ], 403);
+                'message' => 'اشتراك المطعم منتهي أو غير فعال، برجاء الدفع للتجديد او التفعيل.'
+            ], 402);
         }
 
-        // 5. Attach restaurant to request for further processing
+        // 5. تمرير الكائن للمستقبل (عشان متعملش Query تاني في الكنترولر)
         $request->merge(['current_restaurant' => $restaurant]);
 
         return $next($request);

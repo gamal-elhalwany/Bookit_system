@@ -2,16 +2,12 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Comment;
 use App\Models\Restaurant;
 use Illuminate\Support\Str;
 use Illuminate\Http\Request;
 use App\Models\RestaurantImage;
 use App\Models\Restaurnt_user;
-use App\Models\Subscription;
-use App\Models\SubscriptionsPayments;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
 
 class RestaurantController extends Controller
@@ -21,8 +17,12 @@ class RestaurantController extends Controller
      */
     public function index()
     {
-        $restaurants = Restaurant::with('subscriptions')->get();
-        return response()->json(["data" => $restaurants]);
+        $user = auth()->user();
+        $restaurants = $user->restaurants()->with(['subscriptions', 'categories', 'products'])->get();
+        return response()->json([
+            'username' => $user->name,
+            "data" => $restaurants,
+        ]);
     }
 
     /**
@@ -34,7 +34,9 @@ class RestaurantController extends Controller
 
         try {
             $validated = $request->validate([
-                'name' => 'required|string|max:255|unique:restaurants,name',
+                'name' => 'required|array',
+                'name.ar' => 'required|string|max:255|unique:products,name->ar',
+                'name.en' => 'required|string|max:255|unique:products,name->en',
                 'address' => 'required|string|max:255|unique:restaurants,address',
                 'phone' => 'required|string',
                 'email' => 'required|email|max:255',
@@ -94,13 +96,14 @@ class RestaurantController extends Controller
     public function update(Request $request, Restaurant $restaurant)
     {
         $validated = $request->validate([
-            'name' => 'sometimes|string|max:255',
-            'user_id' => 'sometimes|exists:users,id',
-            'address' => 'sometimes|string|max:255',
-            'phone' => 'sometimes|string|max:20',
+            'name' => 'sometimes|array',
+            'name.ar' => 'sometimes|string|max:255|unique:products,name->ar',
+            'name.en' => 'sometimes|string|max:255|unique:products,name->en',
+            'address' => 'sometimes|string|max:255|unique:restaurants,address',
+            'phone' => 'sometimes|string',
             'email' => 'sometimes|email|max:255',
-            'image' => 'sometimes|string|max:255',
-            'opening_time' => 'sometimes|date_format:H:i',
+            'image' => 'sometimes|image|mimes:jpg,png,jpeg,webp',
+            'opening_time' => 'nullable',
 
             'closing_time' => [
                 'sometimes',
@@ -196,9 +199,9 @@ class RestaurantController extends Controller
     /**
      * Delete a restaurant image.
      */
-    public function deleterestimage($id)
+    public function deleterestimage(Request $request, $id)
     {
-        $image = RestaurantImage::findOrFail($id);
+        $image = RestaurantImage::where('restaurant_id', $request->restaurant_id)->findOrFail($id);
 
         if ($image->image && Storage::disk('public')->exists($image->image)) {
             Storage::disk('public')->delete($image->image);

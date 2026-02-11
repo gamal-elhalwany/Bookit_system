@@ -5,9 +5,9 @@ namespace App\Services;
 use Carbon\Carbon;
 use App\Models\Package;
 use App\Models\Subscription;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Http;
 use App\Models\SubscriptionsPayments;
-use Illuminate\Support\Facades\Auth;
 
 class SubscriptionService
 {
@@ -70,7 +70,7 @@ class SubscriptionService
     /**
      * Get Paymob payment link for the subscription.
      */
-    public function getPaymobLink($subscription, $amount, $paymentMethod, $walletNumber = null)x
+    public function getPaymobLink($subscription, $amount, $paymentMethod, $walletNumber = null)
     {
         // المرحلة 1: الحصول على Authentication Token
         $auth = Http::post('https://accept.paymob.com/api/auth/tokens', [
