@@ -12,9 +12,9 @@ return new class extends Migration {
     {
         Schema::create('restaurants', function (Blueprint $table) {
             $table->id();
-            $table->string('name');
+            $table->json('name');
             // $table->unsignedBigInteger('user_id');
-            $table->string('address');
+            $table->json('address');
             $table->string('phone');
             $table->string('email');
             $table->string('image');

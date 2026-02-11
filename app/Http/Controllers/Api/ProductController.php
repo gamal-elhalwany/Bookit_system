@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Product;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -15,11 +16,8 @@ class ProductController extends Controller
      */
     public function index(Request $request)
     {
-        $products = $request->user()->restaurant()
-            ->with('products')
-            ->get()
-            ->pluck('products')
-            ->flatten();
+        $restaurantId = $request->query('restaurant_id');
+        $products = Product::where('restaurant_id', $restaurantId)->get();
 
         if (count($products)) {
             return response()->json([
@@ -46,8 +44,12 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'name' => 'required|unique:products,name|min:5|max:255',
-            'description' => 'nullable|string|max:2000|unique:products,description',
+            'name' => 'required|array',
+            'name.ar' => 'required|string|max:255|unique:products,name->ar',
+            'name.en' => 'required|string|max:255|unique:products,name->en',
+            'description' => 'nullable|array',
+            'description.ar' => 'nullable|string|max:2000',
+            'description.en' => 'nullable|string|max:2000',
             'category_id' => 'required|exists:categories,id',
             'price' => 'required|numeric',
             'image' => 'required|image|mimes:jpeg,jpg,png,webp',
@@ -76,8 +78,18 @@ class ProductController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Product $product)
+    public function show(Request $request, Product $product)
     {
+        $restaurantId = $request->query('restaurant_id');
+        $product = Product::where('restaurant_id', $restaurantId)
+        ->where('id', $product->id)->first();
+
+        if (!$product) {
+            return response()->json([
+                'message' => 'Product not found for this restaurant!',
+            ], 404);
+        }
+
         return response()->json([
             'Product' => $product,
         ]);
@@ -98,11 +110,15 @@ class ProductController extends Controller
     {
         $validated = $request->validate([
             'restaurant_id' => 'required|exists:restaurants,id',
-            'name' => 'sometimes|unique:products,name|min:5|max:255',
-            'description' => 'nullable|string|max:2000|unique:products,description',
+            'name' => 'sometimes|array',
+            'name.ar' => 'sometimes|string|max:255|unique:products,name->ar',
+            'name.en' => 'sometimes|string|max:255|unique:products,name->en',
+            'description' => 'nullable|array',
+            'description.ar' => 'nullable|string|max:2000',
+            'description.en' => 'nullable|string|max:2000',
             'category_id' => 'required|exists:categories,id',
             'price' => 'sometimes|numeric',
-            'image' => 'sometimes|image|mimes:jpeg,jpg,png,webp',
+            'image' => 'required|image|mimes:jpeg,jpg,png,webp',
             'is_active' => 'boolean',
         ]);
 
@@ -112,7 +128,7 @@ class ProductController extends Controller
             }
 
             $file = $request->file('image');
-            $filename = $product->name . rand(1, 9999) . '.' . $file->getClientOriginalExtension();
+            $filename = Carbon::now()->timestamp . rand(1, 9999) . '.' . $file->getClientOriginalExtension();
             $path = $file->storeAs('products', $filename, 'public');
 
             $validated['image'] = $path;

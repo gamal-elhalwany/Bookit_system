@@ -11,9 +11,9 @@ class Restaurant extends Model
     /**
      * @return \Illuminate\Database\Eloquent\Relations\BelongsTo
      */
-    public function user()
+    public function users()
     {
-        return $this->belongsTo(User::class);
+        return $this->belongsToMany(User::class);
     }
 
     /**
@@ -55,4 +55,12 @@ class Restaurant extends Model
     {
         return $this->hasMany(RestaurantImage::class);
     }
+
+    /**
+     * Cast the name attribute to an array (for JSON storage)
+     */
+    protected $casts = [
+        'name' => 'json',
+        'rate' => 'decimal:3',
+    ];
 }

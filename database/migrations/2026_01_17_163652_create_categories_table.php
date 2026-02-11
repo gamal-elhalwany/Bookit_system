@@ -15,8 +15,8 @@ return new class extends Migration
             $table->id();
             $table->foreignId('restaurant_id')->constrained('restaurants')->cascadeOnDelete();
 
-            $table->string('name');
-            $table->text('description')->nullable();
+            $table->json('name');
+            $table->json('description')->nullable();
             $table->string('image')->nullable();
 
             $table->boolean('is_active')->default(true);

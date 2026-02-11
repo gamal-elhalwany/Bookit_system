@@ -14,7 +14,7 @@ class PackagesController extends Controller
     public function index()
     {
         $packages = Package::all();
-        return response()->json(["Data" => $packages], 200);
+        return response()->json(["data" => $packages], 200);
     }
 
     /**
@@ -31,8 +31,12 @@ class PackagesController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:packages,name',
-            'description' => 'nullable|string',
+            'name' => 'required|array',
+            'name.ar' => 'required|string|max:255|unique:packages,name->ar',
+            'name.en' => 'required|string|max:255|unique:packages,name->en',
+            'description' => 'nullable|array',
+            'description.ar' => 'nullable|string',
+            'description.en' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'duration_days' => 'required|integer|min:1',
             'max_restaurants' => 'required|integer|min:1',
@@ -68,8 +72,12 @@ class PackagesController extends Controller
     public function update(Request $request, Package $package)
     {
         $request->validate([
-            'name' => 'required|string|max:255|unique:packages,name,' . $package->id,
-            'description' => 'nullable|string',
+            'name' => 'required|array',
+            'name.ar' => 'required|string|max:255|unique:packages,name->ar',
+            'name.en' => 'required|string|max:255|unique:packages,name->en',
+            'description' => 'nullable|array',
+            'description.ar' => 'nullable|string',
+            'description.en' => 'nullable|string',
             'price' => 'required|numeric|min:0',
             'duration_days' => 'required|integer|min:1',
             'max_restaurants' => 'required|integer|min:1',

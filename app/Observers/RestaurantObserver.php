@@ -11,12 +11,12 @@ class RestaurantObserver
      */
     public function created(Restaurant $restaurant): void
     {
-        $user = auth()->user();
-        $restaurantSubscription = $restaurant->subscriptions()->where('status', 'active')->first();
+        // $user = auth()->user();
+        // $restaurantSubscription = $restaurant->subscriptions()->where('status', 'active')->first();
 
-        if (!$user->hasRole('owner', 'api') && $restaurantSubscription) {
-            $user->assignRole('owner');
-        }
+        // if (!$user->hasRole('owner', 'api') && $restaurantSubscription) {
+        //     $user->assignRole('owner');
+        // }
     }
 
     /**

@@ -17,8 +17,8 @@ return new class extends Migration
 
             $table->foreignId('category_id')->constrained('categories')->cascadeOnDelete();
 
-            $table->string('name');
-            $table->text('description')->nullable();
+            $table->json('name');
+            $table->json('description')->nullable();
 
             $table->decimal('price', 10, 2);
 
